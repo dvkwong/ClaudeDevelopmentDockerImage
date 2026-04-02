@@ -25,13 +25,23 @@ The easiest way to run the container on Unraid is with the included `docker-comp
 
 Place it anywhere accessible, e.g. `/mnt/user/appdata/claude-dev/docker-compose.yml`.
 
-### 2 — (Optional) Set your Discord bot token
+### 2 — (Optional) Configure your instance
 
 Create a `.env` file next to `docker-compose.yml`:
 
 ```env
+# Name this instance (defaults to "claude-dev").
+# Use a unique name for each instance when running multiple side-by-side.
+INSTANCE_NAME=claude-dev
+
+# Discord bot token for the Claude Discord plugin (leave blank if unused).
 DISCORD_BOT_TOKEN=your-token-here
 ```
+
+The `INSTANCE_NAME` variable controls the container name and the host volume
+paths under `/mnt/user/appdata/`. Each unique name gets its own workspace and
+config directories, so you can run several instances at the same time without
+conflicts.
 
 ### 3 — Start the container
 
@@ -43,8 +53,25 @@ docker compose up -d  # start in the background
 ### 4 — Open an interactive shell
 
 ```bash
-docker exec -it claude-dev bash
+docker exec -it claude-dev bash        # default instance
+docker exec -it my-project bash        # custom-named instance
 ```
+
+### Running multiple instances
+
+To run more than one instance, create a separate directory (or `.env` file) for
+each instance with a unique `INSTANCE_NAME`:
+
+```bash
+# Instance 1 (default name)
+INSTANCE_NAME=claude-dev docker compose up -d
+
+# Instance 2
+INSTANCE_NAME=claude-project-b docker compose up -d
+```
+
+Each instance will have isolated workspace and config volumes under
+`/mnt/user/appdata/<INSTANCE_NAME>/`.
 
 ### PUID / PGID
 
