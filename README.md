@@ -16,6 +16,7 @@ The image is built automatically on every push to `main` and published to the Gi
 | [Claude CLI](https://docs.anthropic.com/claude-code) | AI-powered coding assistant |
 | [Bun](https://bun.sh) | Runtime required by the Claude Discord plugin |
 | [Claude Discord plugin](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/discord) | Control Claude from Discord |
+| [ttyd](https://tsl0922.github.io/ttyd/) | Web-based terminal for browser console access |
 
 ## Running on Unraid
 
@@ -36,6 +37,9 @@ INSTANCE_NAME=claude-dev
 
 # Discord bot token for the Claude Discord plugin (leave blank if unused).
 DISCORD_BOT_TOKEN=your-token-here
+
+# Web console port (defaults to 7681). Use different ports for multiple instances.
+TTYD_PORT=7681
 ```
 
 The `INSTANCE_NAME` variable controls the container name and the host volume
@@ -50,11 +54,34 @@ docker compose pull   # fetch the latest image from ghcr.io
 docker compose up -d  # start in the background
 ```
 
-### 4 — Open an interactive shell
+### 4 — Open the web console
+
+The container starts a **web-based terminal** automatically on port **7681**.  
+Open your browser and navigate to:
+
+```
+http://<your-unraid-ip>:7681
+```
+
+You will get a full interactive bash shell right in your browser — no SSH or `docker exec` required.
+
+> **Tip:** On Unraid, click the container's icon → **WebUI** to jump straight to the console (you may need to set the WebUI URL to `http://[IP]:[PORT:7681]` in the template).
+
+### 5 — (Alternative) Open a shell via `docker exec`
 
 ```bash
 docker exec -it claude-dev bash        # default instance
 docker exec -it my-project bash        # custom-named instance
+```
+
+### Viewing logs
+
+Container logs now show startup information and tool versions.  
+View them from the Unraid Docker tab (**Logs** icon) or from the command line:
+
+```bash
+docker logs claude-dev          # default instance
+docker logs -f claude-dev       # follow / stream logs
 ```
 
 ### Running multiple instances
@@ -66,12 +93,12 @@ each instance with a unique `INSTANCE_NAME`:
 # Instance 1 (default name)
 INSTANCE_NAME=claude-dev docker compose up -d
 
-# Instance 2
-INSTANCE_NAME=claude-project-b docker compose up -d
+# Instance 2 (use a different web console port to avoid conflicts)
+INSTANCE_NAME=claude-project-b TTYD_PORT=7682 docker compose up -d
 ```
 
 Each instance will have isolated workspace and config volumes under
-`/mnt/user/appdata/<INSTANCE_NAME>/`.
+`/mnt/user/appdata/<INSTANCE_NAME>/` and its own web console port.
 
 ### PUID / PGID
 

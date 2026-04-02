@@ -12,6 +12,11 @@ services:
       # Optional: Discord bot token for the Claude Discord plugin.
       # Leave blank if you do not use the plugin.
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+      # Port for the web-based terminal (ttyd). Default: 7681.
+      - TTYD_PORT=${TTYD_PORT:-7681}
+    ports:
+      # Web console — access at http://<your-server-ip>:7681
+      - "${TTYD_PORT:-7681}:${TTYD_PORT:-7681}"
     volumes:
       # Primary workspace — map to a share on your Unraid array.
       - /mnt/user/appdata/${INSTANCE_NAME:-claude-dev}/workspace:/workspace
@@ -22,3 +27,9 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:${TTYD_PORT:-7681}/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
