@@ -65,6 +65,8 @@ http://<your-unraid-ip>:7681
 
 You will get a full interactive bash shell right in your browser — no SSH or `docker exec` required.
 
+> **Security note:** The web console has no authentication by default and is intended for use on a trusted local network. **Do not expose port 7681 to the internet.** If you need authentication, add credentials via a `TTYD_CREDENTIAL` environment variable and update the entrypoint's ttyd flags (e.g. `ttyd --credential user:password`).
+
 > **Tip:** On Unraid, click the container's icon → **WebUI** to jump straight to the console (you may need to set the WebUI URL to `http://[IP]:[PORT:7681]` in the template).
 
 ### 5 — (Alternative) Open a shell via `docker exec`

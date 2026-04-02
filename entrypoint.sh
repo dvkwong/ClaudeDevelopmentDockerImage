@@ -84,9 +84,16 @@ log "========================================"
 log "Container is ready."
 
 # ── Keep the container running ───────────────────────────────────────────────
-# Wait on ttyd so the container stays alive and logs remain visible.
-# If ttyd exits unexpectedly, fall back to an infinite sleep so the container
-# does not stop.
-wait "${TTYD_PID}" 2>/dev/null || true
-log "Web console process ended — keeping container alive"
-exec tail -f /dev/null
+# Restart ttyd if it exits unexpectedly so the healthcheck stays valid.
+while true; do
+    wait "${TTYD_PID}" 2>/dev/null || true
+    log "Web console process exited — restarting in 3 seconds …"
+    sleep 3
+    if [ -n "${RUN_USER}" ]; then
+        ttyd --port "${TTYD_PORT}" --writable gosu "${RUN_USER}" /bin/bash &
+    else
+        ttyd --port "${TTYD_PORT}" --writable /bin/bash &
+    fi
+    TTYD_PID=$!
+    log "Web console restarted (PID ${TTYD_PID})"
+done
