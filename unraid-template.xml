@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>ClaudeDevEnv</Name>
+  <Repository>dvkwong/claude-dev-env:latest</Repository>
+  <Registry>https://hub.docker.com/r/dvkwong/claude-dev-env</Registry>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/dvkwong/ClaudeDevelopmentDockerImage</Support>
+  <Project>https://github.com/dvkwong/ClaudeDevelopmentDockerImage</Project>
+  <Overview>
+    Development environment containing the .NET 8 SDK, Node.js 20, npm, git,
+    GitHub CLI (gh), Claude CLI and the Claude Discord plugin.  Ideal for
+    AI-assisted .NET and web development directly on your Unraid server.
+  </Overview>
+  <Category>Tools:</Category>
+  <Icon>https://raw.githubusercontent.com/dvkwong/ClaudeDevelopmentDockerImage/main/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/dvkwong/ClaudeDevelopmentDockerImage/main/unraid-template.xml</TemplateURL>
+  <Date>2026-04-02</Date>
+
+  <!-- ── User / Group mapping (standard Unraid convention) ─────────────────── -->
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID that the container process runs as. Match your Unraid 'nobody' UID (99) or your own UID." Type="Variable" Display="always" Required="true" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID that the container process runs as. Match your Unraid 'users' GID (100) or your own GID." Type="Variable" Display="always" Required="true" Mask="false">100</Config>
+
+  <!-- ── Workspace volume ───────────────────────────────────────────────────── -->
+  <Config Name="Workspace" Target="/workspace" Default="/mnt/user/appdata/claude-dev/workspace" Mode="rw" Description="Working directory mounted inside the container. Map to a folder on your Unraid array or cache drive." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/claude-dev/workspace</Config>
+
+  <!-- ── Claude / tool config ──────────────────────────────────────────────── -->
+  <Config Name="Claude Config" Target="/root/.claude" Default="/mnt/user/appdata/claude-dev/claude-config" Mode="rw" Description="Persists Claude CLI configuration and session data across container restarts." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/claude-dev/claude-config</Config>
+
+  <!-- ── Discord bot token (optional) ─────────────────────────────────────── -->
+  <Config Name="DISCORD_BOT_TOKEN" Target="DISCORD_BOT_TOKEN" Default="" Mode="" Description="(Optional) Discord bot token for the Claude Discord plugin. Leave blank if you do not use the Discord plugin." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+</Container>
