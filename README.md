@@ -26,7 +26,7 @@ The easiest way to run the container on Unraid is with the included `docker-comp
 
 Place it anywhere accessible, e.g. `/mnt/user/appdata/claude-dev/docker-compose.yml`.
 
-### 2 — (Optional) Configure your instance
+### 2 — Configure your instance
 
 Create a `.env` file next to `docker-compose.yml`:
 
@@ -35,12 +35,24 @@ Create a `.env` file next to `docker-compose.yml`:
 # Use a unique name for each instance when running multiple side-by-side.
 INSTANCE_NAME=claude-dev
 
+# Anthropic API key — required for the Claude CLI to work.
+# Get one at https://console.anthropic.com/
+ANTHROPIC_API_KEY=sk-ant-...
+
+# GitHub personal access token — used by gh CLI and git for authenticated access.
+# Create one at https://github.com/settings/tokens (needs "repo" scope).
+GH_TOKEN=ghp_...
+
 # Discord bot token for the Claude Discord plugin (leave blank if unused).
-DISCORD_BOT_TOKEN=your-token-here
+DISCORD_BOT_TOKEN=
 
 # Web console port (defaults to 7681). Use different ports for multiple instances.
 TTYD_PORT=7681
 ```
+
+> **All tokens are configured at runtime** — nothing is baked into the Docker
+> image. Just fill in the `.env` file (or pass variables on the command line)
+> and restart the container. Never commit the `.env` file to source control.
 
 The `INSTANCE_NAME` variable controls the container name and the host volume
 paths under `/mnt/user/appdata/`. Each unique name gets its own workspace and
@@ -132,7 +144,7 @@ The Discord plugin is pre-installed at `/opt/claude-plugins-official/external_pl
    ```
 4. Follow the on-screen pairing instructions to connect it to your Claude CLI session.
 
-> **Note:** Never commit your Discord bot token to source control.
+> **Note:** Never commit your `.env` file or any tokens/API keys to source control.
 
 ## CI/CD
 

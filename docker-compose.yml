@@ -12,6 +12,12 @@ services:
       # Optional: Discord bot token for the Claude Discord plugin.
       # Leave blank if you do not use the plugin.
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+      # Optional: GitHub personal access token for gh CLI and git operations.
+      # Leave blank if you do not need authenticated GitHub access.
+      - GH_TOKEN=${GH_TOKEN:-}
+      # Required: Anthropic API key for the Claude CLI.
+      # Claude CLI will not work without this.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       # Port for the web-based terminal (ttyd). Default: 7681.
       - TTYD_PORT=${TTYD_PORT:-7681}
     ports:

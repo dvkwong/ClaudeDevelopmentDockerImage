@@ -36,6 +36,18 @@ else
     log "  Discord bot token: (not set)"
 fi
 
+if [ -n "${GH_TOKEN}" ]; then
+    log "  GH_TOKEN: (set)"
+else
+    log "  GH_TOKEN: (not set — gh CLI and git will use unauthenticated access)"
+fi
+
+if [ -n "${ANTHROPIC_API_KEY}" ]; then
+    log "  ANTHROPIC_API_KEY: (set)"
+else
+    log "  ANTHROPIC_API_KEY: (not set — claude CLI will not work without it)"
+fi
+
 # ── User mapping ─────────────────────────────────────────────────────────────
 if [ "${PUID}" != "0" ] || [ "${PGID}" != "0" ]; then
     log "Remapping container user to UID=${PUID} GID=${PGID}"
