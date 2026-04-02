@@ -28,6 +28,13 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
+# ── ttyd — web-based terminal ─────────────────────────────────────────────────
+# Provides a browser-accessible console so Unraid users can reach the shell
+# without relying solely on `docker exec`.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ttyd \
+    && rm -rf /var/lib/apt/lists/*
+
 # ── Bun runtime ───────────────────────────────────────────────────────────────
 # Bun is required by the Claude Discord plugin's MCP server.
 ENV BUN_INSTALL="/usr/local/bun"
@@ -57,6 +64,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # ── Workspace ────────────────────────────────────────────────────────────────
 RUN mkdir -p /workspace
 WORKDIR /workspace
+
+# ttyd default port
+EXPOSE 7681
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]
