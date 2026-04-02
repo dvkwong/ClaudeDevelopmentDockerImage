@@ -52,18 +52,48 @@ fi
 if [ "${PUID}" != "0" ] || [ "${PGID}" != "0" ]; then
     log "Remapping container user to UID=${PUID} GID=${PGID}"
 
-    # Create/update the group
-    if ! getent group devuser > /dev/null 2>&1; then
-        groupadd -g "${PGID}" devuser
+    # Create/update the group — handle the case where the desired GID is
+    # already taken by another group (e.g. GID 100 = "users" on many distros).
+    if getent group devuser > /dev/null 2>&1; then
+        CURRENT_GID=$(getent group devuser | cut -d: -f3)
+        if [ "${CURRENT_GID}" != "${PGID}" ]; then
+            if getent group "${PGID}" > /dev/null 2>&1; then
+                EXISTING_GROUP=$(getent group "${PGID}" | cut -d: -f1)
+                log "GID ${PGID} already belongs to group '${EXISTING_GROUP}' — reusing it"
+            else
+                groupmod -g "${PGID}" devuser
+            fi
+        fi
     else
-        groupmod -g "${PGID}" devuser
+        if getent group "${PGID}" > /dev/null 2>&1; then
+            EXISTING_GROUP=$(getent group "${PGID}" | cut -d: -f1)
+            log "GID ${PGID} already belongs to group '${EXISTING_GROUP}' — reusing it"
+        else
+            groupadd -g "${PGID}" devuser
+        fi
     fi
 
-    # Create/update the user
-    if ! getent passwd devuser > /dev/null 2>&1; then
-        useradd -u "${PUID}" -g "${PGID}" -m -s /bin/bash devuser
-    else
+    # Create/update the user — handle the case where the desired UID is
+    # already taken by another user.
+    if getent passwd devuser > /dev/null 2>&1; then
+        # devuser exists — check for UID collision before modifying
+        CURRENT_UID=$(id -u devuser)
+        if [ "${CURRENT_UID}" != "${PUID}" ]; then
+            BLOCKING_USER=$(getent passwd "${PUID}" 2>/dev/null | cut -d: -f1)
+            if [ -n "${BLOCKING_USER}" ]; then
+                log "UID ${PUID} already belongs to user '${BLOCKING_USER}' — reassigning it"
+                usermod -u "$(shuf -i 60000-60999 -n 1)" "${BLOCKING_USER}"
+            fi
+        fi
         usermod -u "${PUID}" -g "${PGID}" devuser
+    else
+        if getent passwd "${PUID}" > /dev/null 2>&1; then
+            EXISTING_USER=$(getent passwd "${PUID}" | cut -d: -f1)
+            log "UID ${PUID} already belongs to user '${EXISTING_USER}' — updating its GID"
+            usermod -g "${PGID}" "${EXISTING_USER}"
+        else
+            useradd -u "${PUID}" -g "${PGID}" -m -s /bin/bash devuser
+        fi
     fi
 
     # Give the mapped user ownership of the workspace only when needed,
