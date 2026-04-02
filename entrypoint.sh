@@ -26,8 +26,11 @@ if [ "${PUID}" != "0" ] || [ "${PGID}" != "0" ]; then
         usermod -u "${PUID}" -g "${PGID}" devuser
     fi
 
-    # Give the mapped user ownership of the workspace
-    chown -R "${PUID}:${PGID}" /workspace
+    # Give the mapped user ownership of the workspace only when needed,
+    # to avoid a slow recursive chown on large bind-mounted directories.
+    if [ "$(stat -c '%u:%g' /workspace)" != "${PUID}:${PGID}" ]; then
+        chown "${PUID}:${PGID}" /workspace
+    fi
 
     # Re-execute the requested command as the mapped user
     exec gosu "${PUID}:${PGID}" "$@"

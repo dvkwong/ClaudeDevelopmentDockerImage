@@ -1,15 +1,15 @@
-# Development image based on the Microsoft .NET 8.0 SDK (LTS)
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+# Development image — .NET SDK (latest) via Microsoft devcontainers base
+FROM mcr.microsoft.com/devcontainers/dotnet:latest
 
-# ── System packages ──────────────────────────────────────────────────────────
-# Install curl, gnupg and git (git is typically pre-installed but listed
-# explicitly for clarity).  The lists are removed afterwards to keep the
-# layer slim.
+# All installation steps run as root
+USER root
+
+# ── Extra system packages ─────────────────────────────────────────────────────
+# curl, git and ca-certificates are already present in the devcontainers base.
+# gosu is needed by the entrypoint to drop privileges to PUID:PGID (Unraid).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl \
+        gosu \
         gnupg \
-        git \
-        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Node.js 20 LTS + npm ─────────────────────────────────────────────────────
@@ -34,8 +34,12 @@ ENV BUN_INSTALL="/usr/local/bun"
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 RUN curl -fsSL https://bun.sh/install | bash
 
-# ── Claude CLI ───────────────────────────────────────────────────────────────
-RUN npm install -g @anthropic-ai/claude-code
+# ── Claude CLI + Vite + React tooling ────────────────────────────────────────
+RUN npm install -g \
+        @anthropic-ai/claude-code \
+        vite \
+        create-vite \
+        typescript
 
 # ── Claude Discord plugin ─────────────────────────────────────────────────────
 # Clone the official plugin repository and install its dependencies so the
@@ -46,7 +50,13 @@ RUN git clone --depth 1 https://github.com/anthropics/claude-plugins-official.gi
     && cd /opt/claude-plugins-official/external_plugins/discord \
     && bun install
 
+# ── Entrypoint (PUID / PGID support for Unraid) ──────────────────────────────
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # ── Workspace ────────────────────────────────────────────────────────────────
+RUN mkdir -p /workspace
 WORKDIR /workspace
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]
