@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Editor / IDE artefacts
+.vscode
+.idea
+*.suo
+*.user
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Build outputs
+**/bin/
+**/obj/
+dist/
+out/
+
+# Node / npm
+node_modules/
+npm-debug.log*
+
+# Secrets / environment files
+.env
+.env.*
+*.pem
+*.key

@@ -1,0 +1,24 @@
+services:
+  claude-dev:
+    # Pull the pre-built image from GitHub Container Registry.
+    # The image is built and published automatically on every push to main.
+    image: ghcr.io/dvkwong/claudedevelopmentdockerimage:latest
+    container_name: claude-dev
+    environment:
+      # Unraid default UIDs — change to match your host user if needed.
+      # Set both to 0 to run as root.
+      - PUID=99
+      - PGID=100
+      # Optional: Discord bot token for the Claude Discord plugin.
+      # Leave blank if you do not use the plugin.
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+    volumes:
+      # Primary workspace — map to a share on your Unraid array.
+      - /mnt/user/appdata/claude-dev/workspace:/workspace
+      # Persist Claude CLI config and sessions across container restarts.
+      # This path is used when PUID != 0 (i.e. running as devuser).
+      # If you run as root (PUID=0) change this to /root/.claude instead.
+      - /mnt/user/appdata/claude-dev/claude-config:/home/devuser/.claude
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
