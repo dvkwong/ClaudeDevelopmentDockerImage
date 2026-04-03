@@ -9,6 +9,8 @@ services:
       # Set both to 0 to run as root.
       - PUID=${PUID:-99}
       - PGID=${PGID:-100}
+      - GH_TOKEN=${GH_TOKEN:-}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
     volumes:
       # Primary workspace — map to a share on your Unraid array.
       - /mnt/user/appdata/${INSTANCE_NAME:-claude-dev}/workspace:/workspace
