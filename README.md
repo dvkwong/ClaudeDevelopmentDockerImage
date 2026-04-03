@@ -8,7 +8,6 @@ The image is built automatically on every push to `main` and published to the Gi
 | Tool | Purpose |
 |------|---------|
 | [.NET SDK](https://dot.net) (latest) | .NET runtime + SDK (base image) |
-| [Node.js 20 LTS](https://nodejs.org) + npm | Runtime required by the Claude CLI |
 | [git](https://git-scm.com) | Version control |
 | [GitHub CLI (`gh`)](https://cli.github.com) | GitHub operations from the terminal |
 | [Claude CLI](https://docs.anthropic.com/claude-code) | AI-powered coding assistant |
