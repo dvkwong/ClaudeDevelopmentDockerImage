@@ -24,7 +24,7 @@ log "  dotnet  : $(dotnet --version 2>/dev/null || echo 'not found')"
 log "  git     : $(git --version 2>/dev/null || echo 'not found')"
 log "  gh      : $(gh --version 2>/dev/null | head -1 || echo 'not found')"
 log "  bun     : $(bun --version 2>/dev/null || echo 'not found')"
-log "  claude  : $(claude --version 2>/dev/null || echo 'not found')"
+log "  claude  : $(claude-real --version 2>/dev/null || echo 'not found')"
 
 log "Configuration:"
 log "  PUID=${PUID}  PGID=${PGID}"
