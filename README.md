@@ -1,6 +1,6 @@
 # ClaudeDevelopmentDockerImage
 
-A Docker image containing .NET / web-development tools and the Claude CLI (with Discord plugin) for isolating development environments.  
+A Docker image based on the Microsoft .NET devcontainer image with the GitHub CLI and Claude CLI added for isolated development environments.
 The image is built automatically on every push to `main` and published to the GitHub Container Registry.
 
 ## What's inside
@@ -8,15 +8,10 @@ The image is built automatically on every push to `main` and published to the Gi
 | Tool | Purpose |
 |------|---------|
 | [.NET SDK](https://dot.net) (latest) | .NET runtime + SDK (base image) |
-| [Node.js 20 LTS](https://nodejs.org) + npm | JavaScript / web development |
-| [Vite](https://vitejs.dev) + [create-vite](https://vitejs.dev/guide/#scaffolding-your-first-vite-project) | Fast frontend build tool & project scaffolding |
-| [TypeScript](https://www.typescriptlang.org) | Typed JavaScript (React / Vite projects) |
 | [git](https://git-scm.com) | Version control |
 | [GitHub CLI (`gh`)](https://cli.github.com) | GitHub operations from the terminal |
-| [Claude CLI](https://docs.anthropic.com/claude-code) | AI-powered coding assistant |
 | [Bun](https://bun.sh) | Runtime required by the Claude Discord plugin |
-| [Claude Discord plugin](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/discord) | Control Claude from Discord |
-| [ttyd](https://tsl0922.github.io/ttyd/) | Web-based terminal for browser console access |
+| [Claude CLI](https://docs.anthropic.com/claude-code) | AI-powered coding assistant |
 
 ## Running on Unraid
 
@@ -35,29 +30,27 @@ Create a `.env` file next to `docker-compose.yml`:
 # Use a unique name for each instance when running multiple side-by-side.
 INSTANCE_NAME=claude-dev
 
-# Anthropic API key — required for the Claude CLI to work.
-# Get one at https://console.anthropic.com/
-ANTHROPIC_API_KEY=sk-ant-...
-
-# GitHub personal access token — used by gh CLI and git for authenticated access.
-# Create one at https://github.com/settings/tokens (needs "repo" scope).
-GH_TOKEN=ghp_...
-
-# Discord bot token for the Claude Discord plugin (leave blank if unused).
-DISCORD_BOT_TOKEN=
-
-# Web console port (defaults to 7681). Use different ports for multiple instances.
-TTYD_PORT=7681
+# Optional: map file ownership to your Unraid user.
+PUID=99
+PGID=100
 ```
 
-> **All tokens are configured at runtime** — nothing is baked into the Docker
-> image. Just fill in the `.env` file (or pass variables on the command line)
-> and restart the container. Never commit the `.env` file to source control.
+Auth is no longer passed through environment variables. Instead, sign in once
+inside the container and let the mounted home directories persist the CLI state
+across image updates.
 
 The `INSTANCE_NAME` variable controls the container name and the host volume
 paths under `/mnt/user/appdata/`. Each unique name gets its own workspace and
-config directories, so you can run several instances at the same time without
+home directories, so you can run several instances at the same time without
 conflicts.
+
+The compose file mounts these persistent paths:
+
+| Host path | Container path | Purpose |
+|-----------|----------------|---------|
+| `/mnt/user/appdata/<INSTANCE_NAME>/workspace` | `/workspace` | Git repos, project files, local scripts |
+| `/mnt/user/appdata/<INSTANCE_NAME>/home` | `/home/devuser` | Non-root auth, dotfiles, user-space tooling |
+| `/mnt/user/appdata/<INSTANCE_NAME>/root` | `/root` | Root auth and config when using root shells |
 
 ### 3 — Start the container
 
@@ -66,31 +59,31 @@ docker compose pull   # fetch the latest image from ghcr.io
 docker compose up -d  # start in the background
 ```
 
-### 4 — Open the web console
-
-The container starts a **web-based terminal** automatically on port **7681**.  
-Open your browser and navigate to:
-
-```
-http://<your-unraid-ip>:7681
-```
-
-You will get a full interactive bash shell right in your browser — no SSH or `docker exec` required.
-
-> **Security note:** The web console has no authentication by default and is intended for use on a trusted local network. **Do not expose port 7681 to the internet.** If you need authentication, add credentials via a `TTYD_CREDENTIAL` environment variable and update the entrypoint's ttyd flags (e.g. `ttyd --credential user:password`).
-
-> **Tip:** On Unraid, click the container's icon → **WebUI** to jump straight to the console (you may need to set the WebUI URL to `http://[IP]:[PORT:7681]` in the template).
-
-### 5 — (Alternative) Open a shell via `docker exec`
+### 4 — Open a shell
 
 ```bash
-docker exec -it claude-dev bash        # default instance
-docker exec -it my-project bash        # custom-named instance
+docker exec -it --user 99:100 -e HOME=/home/devuser -w /workspace claude-dev bash
+docker exec -it --user 99:100 -e HOME=/home/devuser -w /workspace my-project bash
 ```
+
+Replace `99:100` with your configured `PUID:PGID`. If you need a root shell,
+drop the `--user` flag.
+
+### 5 — Authenticate once
+
+Run these commands inside the container shell:
+
+```bash
+claude auth
+gh auth login
+```
+
+Those credentials are stored in the mounted home directories, so they survive
+container recreation and image updates.
 
 ### Viewing logs
 
-Container logs now show startup information and tool versions.  
+Container logs now show startup information and tool versions.
 View them from the Unraid Docker tab (**Logs** icon) or from the command line:
 
 ```bash
@@ -107,12 +100,12 @@ each instance with a unique `INSTANCE_NAME`:
 # Instance 1 (default name)
 INSTANCE_NAME=claude-dev docker compose up -d
 
-# Instance 2 (use a different web console port to avoid conflicts)
-INSTANCE_NAME=claude-project-b TTYD_PORT=7682 docker compose up -d
+# Instance 2
+INSTANCE_NAME=claude-project-b docker compose up -d
 ```
 
-Each instance will have isolated workspace and config volumes under
-`/mnt/user/appdata/<INSTANCE_NAME>/` and its own web console port.
+Each instance will have isolated workspace and home volumes under
+`/mnt/user/appdata/<INSTANCE_NAME>/`.
 
 ### PUID / PGID
 
@@ -127,34 +120,63 @@ Set both to `0` to run as root.
 
 ## Building locally
 
+For local testing before pushing to GitHub, use the local-only compose file and
+helper script in this repo.
+
+### Local test files
+
+- `docker-compose.local.yml` builds from the current checkout instead of pulling from GHCR.
+- `local-dev.sh` wraps the common local test commands.
+- `.docker-test/` stores the local workspace and persisted home directories.
+
+### Local test workflow
+
 ```bash
-docker build -t claude-dev .
+./local-dev.sh up
+./local-dev.sh logs
+./local-dev.sh shell
 ```
 
-## Using the Claude Discord plugin
+That flow will:
 
-The Discord plugin is pre-installed at `/opt/claude-discord-plugin`.
+- build the image from the current `Dockerfile`
+- start a local container named `claude-dev-local`
+- persist test data in `.docker-test/workspace`, `.docker-test/home`, and `.docker-test/root`
 
-1. Create a Discord bot in the [Discord Developer Portal](https://discord.com/developers/applications) and copy its token.
-2. Pass the token via the `DISCORD_BOT_TOKEN` environment variable in your `.env` file (see above).
-3. Start the plugin's MCP server inside the container:
-   ```bash
-   cd /opt/claude-discord-plugin
-   bun server.ts
-   ```
-4. Follow the on-screen pairing instructions to connect it to your Claude CLI session.
+Useful local commands:
 
-### Alternative: install via Claude CLI
-
-If you prefer not to use the pre-installed copy, you can install the Discord plugin directly from within a Claude CLI session:
-
-```
-/plugin install discord@claude-plugins-official
+```bash
+./local-dev.sh build
+./local-dev.sh recreate
+./local-dev.sh root-shell
+./local-dev.sh down
+./local-dev.sh clean
 ```
 
-See the [official docs](https://code.claude.com/docs/en/channels#discord) for more details.
+If you want to run the compose commands directly instead of using the script:
 
-> **Note:** Never commit your `.env` file or any tokens/API keys to source control.
+```bash
+mkdir -p .docker-test/workspace .docker-test/home .docker-test/root
+docker compose -f docker-compose.local.yml up -d --build
+docker exec -it --user "$(id -u):$(id -g)" -e HOME=/home/devuser -w /workspace claude-dev-local bash
+```
+
+## Persistence notes
+
+Anything stored in `/workspace`, `/home/devuser`, or `/root` survives image
+updates because those paths are bind-mounted from the host.
+
+This covers:
+
+- cloned repositories and project files
+- Claude CLI auth, settings, and local state
+- GitHub CLI auth and config
+- dotfiles and user-space tooling installed under the mounted home directory
+
+What does not persist automatically is software installed into the container's
+system image at runtime, such as `apt install` inside a running container. If
+you want extra tools to survive recreation, install them into the mounted home
+directory or keep them in `/workspace`.
 
 ## CI/CD
 

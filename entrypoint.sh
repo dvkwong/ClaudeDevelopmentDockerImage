@@ -14,6 +14,7 @@ PGID=${PGID:-0}
 
 log "Starting Claude Development Environment"
 log "========================================"
+mkdir -p /workspace /home/devuser /root
 
 # ── Print tool versions ──────────────────────────────────────────────────────
 log "Tool versions:"
@@ -24,29 +25,12 @@ log "  git     : $(git --version 2>/dev/null || echo 'not found')"
 log "  gh      : $(gh --version 2>/dev/null | head -1 || echo 'not found')"
 log "  bun     : $(bun --version 2>/dev/null || echo 'not found')"
 log "  claude  : $(claude --version 2>/dev/null || echo 'not found')"
-log "  ttyd    : $(ttyd --version 2>/dev/null | head -1 || echo 'not found')"
 
 log "Configuration:"
 log "  PUID=${PUID}  PGID=${PGID}"
 log "  Workspace: /workspace"
-
-if [ -n "${DISCORD_BOT_TOKEN}" ]; then
-    log "  Discord bot token: (set)"
-else
-    log "  Discord bot token: (not set)"
-fi
-
-if [ -n "${GH_TOKEN}" ]; then
-    log "  GH_TOKEN: (set)"
-else
-    log "  GH_TOKEN: (not set — gh CLI and git will use unauthenticated access)"
-fi
-
-if [ -n "${ANTHROPIC_API_KEY}" ]; then
-    log "  ANTHROPIC_API_KEY: (set)"
-else
-    log "  ANTHROPIC_API_KEY: (not set — claude CLI will not work without it)"
-fi
+log "  Persistent non-root home: /home/devuser"
+log "  Persistent root home: /root"
 
 # ── User mapping ─────────────────────────────────────────────────────────────
 if [ "${PUID}" != "0" ] || [ "${PGID}" != "0" ]; then
@@ -96,46 +80,22 @@ if [ "${PUID}" != "0" ] || [ "${PGID}" != "0" ]; then
         fi
     fi
 
+    if [ "$(stat -c '%u:%g' /home/devuser)" != "${PUID}:${PGID}" ]; then
+        chown "${PUID}:${PGID}" /home/devuser
+    fi
+
     # Give the mapped user ownership of the workspace only when needed,
     # to avoid a slow recursive chown on large bind-mounted directories.
     if [ "$(stat -c '%u:%g' /workspace)" != "${PUID}:${PGID}" ]; then
         chown "${PUID}:${PGID}" /workspace
     fi
 
-    RUN_USER="${PUID}:${PGID}"
-else
-    RUN_USER=""
+    export HOME=/home/devuser
+    log "Running command as ${PUID}:${PGID} with HOME=${HOME}"
+    exec gosu "${PUID}:${PGID}" "$@"
 fi
 
-# ── Start ttyd (web-based terminal) ──────────────────────────────────────────
-# ttyd provides a browser-accessible console on port 7681 so Unraid users can
-# open the container shell from the Docker tab or navigate directly to the port.
-TTYD_PORT=${TTYD_PORT:-7681}
-log "Starting web console (ttyd) on port ${TTYD_PORT} …"
-
-if [ -n "${RUN_USER}" ]; then
-    # Run ttyd as root but have it spawn shells as the mapped user
-    ttyd --port "${TTYD_PORT}" --writable gosu "${RUN_USER}" /bin/bash &
-else
-    ttyd --port "${TTYD_PORT}" --writable /bin/bash &
-fi
-TTYD_PID=$!
-log "Web console started (PID ${TTYD_PID})"
-log "  → Open http://<your-server-ip>:${TTYD_PORT} in a browser"
+export HOME=/root
 log "========================================"
-log "Container is ready."
-
-# ── Keep the container running ───────────────────────────────────────────────
-# Restart ttyd if it exits unexpectedly so the healthcheck stays valid.
-while true; do
-    wait "${TTYD_PID}" 2>/dev/null || true
-    log "Web console process exited — restarting in 3 seconds …"
-    sleep 3
-    if [ -n "${RUN_USER}" ]; then
-        ttyd --port "${TTYD_PORT}" --writable gosu "${RUN_USER}" /bin/bash &
-    else
-        ttyd --port "${TTYD_PORT}" --writable /bin/bash &
-    fi
-    TTYD_PID=$!
-    log "Web console restarted (PID ${TTYD_PID})"
-done
+log "Running command as root with HOME=${HOME}"
+exec "$@"
