@@ -27,12 +27,16 @@ RUN curl -fsSL https://claude.ai/install.sh | bash \
     && install -m 755 "$(readlink -f /root/.local/bin/claude)" /usr/local/bin/claude \
     && rm -rf /root/.cache/claude /root/.claude /root/.local/bin /root/.local/share/claude /root/.local/state/claude
 
+# ── Bun runtime ──────────────────────────────────────────────────────────────
+ENV BUN_INSTALL="/usr/local/bun"
+RUN curl -fsSL https://bun.sh/install | bash
+
 # ── Entrypoint (PUID / PGID support for Unraid) ──────────────────────────────
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # ── Workspace ────────────────────────────────────────────────────────────────
-ENV PATH="/home/devuser/.local/bin:/root/.local/bin:${PATH}"
+ENV PATH="${BUN_INSTALL}/bin:/home/devuser/.local/bin:/root/.local/bin:${PATH}"
 RUN mkdir -p /workspace /home/devuser
 WORKDIR /workspace
 
