@@ -1,0 +1,16 @@
+services:
+  claude-dev-local:
+    build:
+      context: .
+    image: claude-dev-local:dev
+    container_name: ${LOCAL_CONTAINER_NAME:-claude-dev-local}
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    volumes:
+      - ./.docker-test/workspace:/workspace
+      - ./.docker-test/home:/home/devuser
+      - ./.docker-test/root:/root
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
