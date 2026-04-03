@@ -69,6 +69,10 @@ docker exec -it --user 99:100 -e HOME=/home/devuser -w /workspace my-project bas
 Replace `99:100` with your configured `PUID:PGID`. If you need a root shell,
 drop the `--user` flag.
 
+When opening a root shell from the Unraid console, `claude` will automatically
+drop to the mapped `PUID:PGID` user so it can run without hitting Claude's
+root/sudo safety restriction.
+
 ### 5 — Authenticate once
 
 Run these commands inside the container shell:

@@ -24,8 +24,10 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
 
 # ── Claude CLI ────────────────────────────────────────────────────────────────
 RUN curl -fsSL https://claude.ai/install.sh | bash \
-    && install -m 755 "$(readlink -f /root/.local/bin/claude)" /usr/local/bin/claude \
+    && install -m 755 "$(readlink -f /root/.local/bin/claude)" /usr/local/bin/claude-real \
     && rm -rf /root/.cache/claude /root/.claude /root/.local/bin /root/.local/share/claude /root/.local/state/claude
+COPY claude-wrapper.sh /usr/local/bin/claude
+RUN chmod +x /usr/local/bin/claude
 
 # ── Bun runtime ──────────────────────────────────────────────────────────────
 ENV BUN_INSTALL="/usr/local/bun"
@@ -36,7 +38,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # ── Workspace ────────────────────────────────────────────────────────────────
-ENV PATH="${BUN_INSTALL}/bin:/home/devuser/.local/bin:/root/.local/bin:${PATH}"
+ENV PATH="${BUN_INSTALL}/bin:${PATH}:/home/devuser/.local/bin:/root/.local/bin"
 RUN mkdir -p /workspace /home/devuser
 WORKDIR /workspace
 
