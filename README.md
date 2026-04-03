@@ -33,11 +33,17 @@ INSTANCE_NAME=claude-dev
 # Optional: map file ownership to your Unraid user.
 PUID=99
 PGID=100
+
+# Optional: pass tokens into the container environment.
+# Useful for automation or tools that read tokens directly.
+GH_TOKEN=
+DISCORD_BOT_TOKEN=
 ```
 
-Auth is no longer passed through environment variables. Instead, sign in once
-inside the container and let the mounted home directories persist the CLI state
-across image updates.
+Interactive auth is still the recommended default for Claude CLI and GitHub CLI:
+sign in once inside the container and let the mounted home directories persist
+the CLI state across image updates. Environment variables are also supported
+when a tool inside the container expects them.
 
 The `INSTANCE_NAME` variable controls the container name and the host volume
 paths under `/mnt/user/appdata/`. Each unique name gets its own workspace and
@@ -84,6 +90,10 @@ gh auth login
 
 Those credentials are stored in the mounted home directories, so they survive
 container recreation and image updates.
+
+If you set `GH_TOKEN` or `DISCORD_BOT_TOKEN` in `.env`, recreate or restart the
+container after changing the file so the new values are loaded into the
+container environment.
 
 ### Viewing logs
 
