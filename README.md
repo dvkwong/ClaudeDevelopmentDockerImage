@@ -133,16 +133,26 @@ docker build -t claude-dev .
 
 ## Using the Claude Discord plugin
 
-The Discord plugin is pre-installed at `/opt/claude-plugins-official/external_plugins/discord`.
+The Discord plugin is pre-installed at `/opt/claude-discord-plugin`.
 
 1. Create a Discord bot in the [Discord Developer Portal](https://discord.com/developers/applications) and copy its token.
-2. Pass the token via the `DISCORD_BOT_TOKEN` environment variable (see above).
+2. Pass the token via the `DISCORD_BOT_TOKEN` environment variable in your `.env` file (see above).
 3. Start the plugin's MCP server inside the container:
    ```bash
-   cd /opt/claude-plugins-official/external_plugins/discord
+   cd /opt/claude-discord-plugin
    bun server.ts
    ```
 4. Follow the on-screen pairing instructions to connect it to your Claude CLI session.
+
+### Alternative: install via Claude CLI
+
+If you prefer not to use the pre-installed copy, you can install the Discord plugin directly from within a Claude CLI session:
+
+```
+/plugin install discord@claude-plugins-official
+```
+
+See the [official docs](https://code.claude.com/docs/en/channels#discord) for more details.
 
 > **Note:** Never commit your `.env` file or any tokens/API keys to source control.
 

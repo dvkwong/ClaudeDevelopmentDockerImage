@@ -49,12 +49,14 @@ RUN npm install -g \
         typescript
 
 # ── Claude Discord plugin ─────────────────────────────────────────────────────
-# Clone the official plugin repository and install its dependencies so the
-# plugin is ready to use.  Users still need to supply their Discord bot token
-# at runtime (see README for instructions).
-RUN git clone --depth 1 https://github.com/anthropics/claude-plugins-official.git \
-        /opt/claude-plugins-official \
-    && cd /opt/claude-plugins-official/external_plugins/discord \
+# Download only the Discord plugin from the official repository via a tarball
+# instead of cloning the entire (large) repo.  Users still need to supply their
+# Discord bot token at runtime (see README for instructions).
+RUN mkdir -p /opt/claude-discord-plugin \
+    && curl -fsSL https://github.com/anthropics/claude-plugins-official/archive/refs/heads/main.tar.gz \
+       | tar -xz --strip-components=3 -C /opt/claude-discord-plugin \
+         claude-plugins-official-main/external_plugins/discord \
+    && cd /opt/claude-discord-plugin \
     && bun install
 
 # ── Entrypoint (PUID / PGID support for Unraid) ──────────────────────────────
